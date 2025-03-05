@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func connectRedis() redis.UniversalClient {
+func ConnectRedis() redis.UniversalClient {
 	redisHost := os.Getenv("REDIS_HOST")
 	if redisHost == "" {
 		log.Fatal("REDIS_HOST environment variable not set")
@@ -45,7 +45,7 @@ func connectRedis() redis.UniversalClient {
 	return client
 }
 
-func connectMongo() *mongo.Client {
+func ConnectMongo() *mongo.Client {
 	URI := os.Getenv("MONGO_HOST")
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
 	client, errConnect := mongo.Connect(ctx, options.Client().ApplyURI(URI))
