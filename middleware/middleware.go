@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	Logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 )
 
 type ErrorResponse struct {
@@ -28,7 +28,7 @@ func ConstructErrorResponse(c *fiber.Ctx, component string, status int, error er
 		ID:   errorId,
 	}
 
-	logger.Error("endpoint-error", "component", component, "source", source, "code", code, "error", error.Error(), "ID", errorId, "input", inputBody)
+	Logger.Error("endpoint-error", "component", component, "source", source, "code", code, "error", error.Error(), "ID", errorId, "input", inputBody)
 
 	c.Set("Content-Type", "application/json")
 	return c.Status(status).JSON(response)
