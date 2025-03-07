@@ -10,7 +10,7 @@ import (
 	"os"
 )
 
-func GeneratePresignURL(key string, fileSize int64, ttl int64) (string, error) {
+func GeneratePresignURL(key string, fileSize int64, ttl int64, bucketName string) (string, error) {
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		return "", fmt.Errorf("loading config: %w", err)
@@ -19,7 +19,7 @@ func GeneratePresignURL(key string, fileSize int64, ttl int64) (string, error) {
 	client := s3.NewFromConfig(cfg)
 
 	presignInput := &s3.PutObjectInput{
-		Bucket: aws.String(os.Getenv("MIXPHOTO_BUCKET")),
+		Bucket: aws.String(bucketName),
 		Key:    aws.String(key),
 	}
 
