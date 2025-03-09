@@ -10,13 +10,26 @@ import (
 	"os"
 )
 
-func GeneratePresignURL(key string, fileSize int64, ttl int64, bucketName string) (string, error) {
+func GeneratePresignURL(key string, fileSize int64, ttl int64, maxFileSize int64, allowReplace bool, bucketName string) (string, error) {
+	if fileSize <= 0 || fileSize > maxFileSize {
+		return "", fmt.Errorf("file size exceeds or below the allowed limit of %d bytes", maxFileSize)
+	}
+
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		return "", fmt.Errorf("loading config: %w", err)
 	}
 
 	client := s3.NewFromConfig(cfg)
+
+	headInput := &s3.HeadObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(key),
+	}
+	_, err = client.HeadObject(context.TODO(), headInput)
+	if err == nil && !allowReplace {
+		return "", fmt.Errorf("file already exists and allowReplace is false")
+	}
 
 	presignInput := &s3.PutObjectInput{
 		Bucket: aws.String(bucketName),
