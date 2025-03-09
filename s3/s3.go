@@ -2,17 +2,26 @@ package s3
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"os"
+	"regexp"
+	"strings"
 )
 
-func GeneratePresignURL(key string, fileSize int64, ttl int64, maxFileSize int64, allowReplace bool, bucketName string) (string, error) {
+func GeneratePresignURL(key string, fileSize int64, allowedFileTypes []string, ttl int64, maxFileSize int64, allowReplace bool, bucketName string) (string, error) {
 	if fileSize <= 0 || fileSize > maxFileSize {
 		return "", fmt.Errorf("file size exceeds or below the allowed limit of %d bytes", maxFileSize)
+	}
+
+	joined := strings.Join(allowedFileTypes, "|")
+	regexFileFormat := fmt.Sprintf(`^[^\s]+\.(%s)$`, joined)
+	if match, _ := regexp.MatchString(regexFileFormat, key); !match {
+		return "", errors.New("unsupported file format")
 	}
 
 	cfg, err := config.LoadDefaultConfig(context.TODO())
