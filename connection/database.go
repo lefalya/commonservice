@@ -54,9 +54,25 @@ func ConnectMongo() *mongo.Client {
 		panic(errConnect)
 	}
 
-	if errPing := client.Ping(ctx, readpref.Primary()); errPing != nil {
-		panic(errPing)
-	}
+	// Auto-reconnect
+	go func() {
+		for {
+			select {
+			case <-time.After(1 * time.Minute):
+				// Ping
+				err := client.Ping(context.Background(), nil)
+				if err != nil {
+					log.Println("Reconnecting to MongoDB...")
+					err = client.Connect(context.Background())
+					if err != nil {
+						log.Println("Failed to reconnect:", err)
+					} else {
+						log.Println("Reconnected to MongoDB successfully.")
+					}
+				}
+			}
+		}
+	}()
 
 	return client
 }
