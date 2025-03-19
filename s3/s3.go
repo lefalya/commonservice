@@ -59,7 +59,7 @@ func GeneratePresignURL(key string, fileSize int64, allowedFileTypes []string, t
 	return presignResult.URL, nil
 }
 
-func GetObject(key string) error {
+func GetObject(key string, bucketName string) error {
 	cfg, err := config.LoadDefaultConfig(
 		context.TODO(),
 	)
@@ -78,7 +78,7 @@ func GetObject(key string) error {
 	downloader := manager.NewDownloader(client)
 
 	_, err = downloader.Download(context.TODO(), file, &s3.GetObjectInput{
-		Bucket: aws.String(os.Getenv("MIXPHOTO_BUCKET")),
+		Bucket: aws.String(bucketName),
 		Key:    aws.String(key),
 	})
 	if err != nil {
@@ -89,7 +89,7 @@ func GetObject(key string) error {
 	return nil
 }
 
-func UploadObject(filePath, key string) error {
+func UploadObject(filePath, key string, bucketName string) error {
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		return fmt.Errorf("loading config: %w", err)
@@ -109,7 +109,7 @@ func UploadObject(filePath, key string) error {
 
 	// Upload the file
 	_, err = uploader.Upload(context.TODO(), &s3.PutObjectInput{
-		Bucket: aws.String(os.Getenv("MIXPHOTO_BUCKET")),
+		Bucket: aws.String(bucketName),
 		Key:    aws.String(key),
 		Body:   file,
 	})
@@ -118,5 +118,25 @@ func UploadObject(filePath, key string) error {
 	}
 
 	fmt.Println("File uploaded successfully to S3 with key:", key)
+	return nil
+}
+
+func DeleteObject(key string, bucketName string) error {
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		return fmt.Errorf("loading config: %w", err)
+	}
+
+	client := s3.NewFromConfig(cfg)
+
+	_, err = client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		return fmt.Errorf("deleting file: %w", err)
+	}
+
+	fmt.Printf("File %s deleted successfully\n", key)
 	return nil
 }
