@@ -7,20 +7,18 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"log"
-	"os"
 	"time"
 )
 
-func ConnectRedis() redis.UniversalClient {
-	redisHost := os.Getenv("REDIS_HOST")
-	if redisHost == "" {
+func ConnectRedis(redisHostAddr string, password string, isClustered bool) redis.UniversalClient {
+	if redisHostAddr == "" {
 		log.Fatal("REDIS_HOST environment variable not set")
 	}
 
-	if os.Getenv("APP_ENV") == "production" {
+	if isClustered {
 		clusterClient := redis.NewClusterClient(&redis.ClusterOptions{
-			Addrs:    []string{redisHost},
-			Password: os.Getenv("REDIS_PASS"),
+			Addrs:    []string{redisHostAddr},
+			Password: password,
 		})
 
 		_, err := clusterClient.Ping(context.Background()).Result()
@@ -32,8 +30,8 @@ func ConnectRedis() redis.UniversalClient {
 	}
 
 	client := redis.NewClient(&redis.Options{
-		Addr:     redisHost,
-		Password: os.Getenv("REDIS_PASS"),
+		Addr:     redisHostAddr,
+		Password: password,
 		DB:       0,
 	})
 
@@ -45,10 +43,9 @@ func ConnectRedis() redis.UniversalClient {
 	return client
 }
 
-func ConnectMongo() *mongo.Client {
-	URI := os.Getenv("MONGO_HOST")
+func ConnectMongo(mongoHostAddr string) *mongo.Client {
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
-	client, errConnect := mongo.Connect(ctx, options.Client().ApplyURI(URI))
+	client, errConnect := mongo.Connect(ctx, options.Client().ApplyURI(mongoHostAddr))
 
 	if errConnect != nil {
 		panic(errConnect)
