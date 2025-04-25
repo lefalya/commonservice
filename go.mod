@@ -9,7 +9,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.78.1
 	github.com/gofiber/fiber/v2 v2.52.6
 	github.com/redis/go-redis/v9 v9.7.1
-	github.com/twibbonize/account v1.3.9-norm
 	go.mongodb.org/mongo-driver v1.17.3
 )
 

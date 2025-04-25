@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gofiber/fiber/v2"
-	"github.com/twibbonize/account"
+	"github.com/lefalya/commonservice/jwt"
 	"log/slog"
 	"math/rand"
 	"os"
@@ -56,7 +56,7 @@ func JWTMiddleware(componentName string) fiber.Handler {
 			return ConstructErrorResponse(c, componentName, fiber.StatusUnauthorized, errors.New("Missing JWT token in the header"), "MX401", "", "JWTMiddleware")
 		}
 
-		claims, err := account.JWTDecode(tokenString[1])
+		claims, err := jwt.JWTDecode(tokenString[1])
 		if err != nil {
 			return ConstructErrorResponse(c, componentName, fiber.StatusUnauthorized, errors.New("Invalid JWT token"), "MX401", "", "JWTMiddleware")
 		}
@@ -66,15 +66,15 @@ func JWTMiddleware(componentName string) fiber.Handler {
 	}
 }
 
-func ParseCredential(c *fiber.Ctx) *account.Claims {
-	var claim *account.Claims
+func ParseCredential(c *fiber.Ctx) *jwt.Claims {
+	var claim *jwt.Claims
 
 	rawClaims := c.Locals("claims")
 	if rawClaims == nil {
 		return claim
 	}
 
-	claim, ok := rawClaims.(*account.Claims)
+	claim, ok := rawClaims.(*jwt.Claims)
 	if !ok {
 		return claim
 	}
