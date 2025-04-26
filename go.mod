@@ -35,9 +35,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
-	github.com/lefalya/commonuser v0.0.3 // indirect
-	github.com/lefalya/item v1.3.0 // indirect
-	github.com/lefalya/pageflow v0.3.0 // indirect
+	github.com/lefalya/item v0.3.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
