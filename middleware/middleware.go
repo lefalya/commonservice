@@ -44,10 +44,13 @@ func RandId(length int) string {
 	return string(result)
 }
 
-func JWTMiddleware(componentName string) fiber.Handler {
+func JWTMiddleware(componentName string, mandatory bool) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
+			if !mandatory {
+				return c.Next()
+			}
 			return ConstructErrorResponse(c, componentName, fiber.StatusUnauthorized, errors.New("Missing JWT token in the header"), "MX401", "", "JWTMiddleware")
 		}
 

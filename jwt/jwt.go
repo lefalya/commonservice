@@ -52,6 +52,8 @@ func JWTDecode(token string) (*Claims, error) {
 		return nil, errors.New("failed to decode token claims")
 	}
 
+	claims.UUID = claims.Sub
+
 	return claims, nil
 }
 
