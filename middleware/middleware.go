@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/gofiber/fiber/v2"
 	"github.com/lefalya/commonservice/jwt"
@@ -15,25 +14,6 @@ var (
 	Logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 )
 
-type ErrorResponse struct {
-	Code string `json:"code"`
-	ID   string `json:"id"`
-}
-
-func ConstructErrorResponse(c *fiber.Ctx, component string, status int, error error, code string, inputBody string, source string) error {
-	errorId := RandId(10)
-
-	response := ErrorResponse{
-		Code: code,
-		ID:   errorId,
-	}
-
-	Logger.Error("endpoint-error", "component", component, "source", source, "code", code, "error", error.Error(), "ID", errorId, "input", inputBody)
-
-	c.Set("Content-Type", "application/json")
-	return c.Status(status).JSON(response)
-}
-
 func RandId(length int) string {
 	characters := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	result := make([]byte, length)
@@ -44,24 +24,52 @@ func RandId(length int) string {
 	return string(result)
 }
 
-func JWTMiddleware(componentName string, mandatory bool) fiber.Handler {
+type ErrorResponse struct {
+	Code string `json:"code"`
+	ID   string `json:"id"`
+}
+
+type Middleware struct {
+	componentName string
+}
+
+func (m Middleware) ConstructErrorResponse(c *fiber.Ctx, status int, error error, code string, source string) error {
+	errorId := RandId(10)
+
+	response := ErrorResponse{
+		Code: code,
+		ID:   errorId,
+	}
+
+	var inputBody string
+	if c.Request().Body() != nil && len(c.Request().Body()) > 0 {
+		inputBody = string(c.Request().Body())
+	}
+
+	Logger.Error("endpoint-error", "component", m.componentName, "source", source, "code", code, "error", error.Error(), "ID", errorId, "input", inputBody)
+
+	c.Set("Content-Type", "application/json")
+	return c.Status(status).JSON(response)
+}
+
+func (m Middleware) ValidateJWT(mandatory bool, jwtDecode func(string) (*jwt.Claims, error)) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
 			if !mandatory {
 				return c.Next()
 			}
-			return ConstructErrorResponse(c, componentName, fiber.StatusUnauthorized, errors.New("Missing JWT token in the header"), "MX401", "", "JWTMiddleware")
+			return m.ConstructErrorResponse(c, fiber.StatusUnauthorized, errors.New("Missing JWT token in the header"), "MX401", "JWTMiddleware")
 		}
 
 		tokenString := strings.Split(authHeader, " ")
 		if len(tokenString) < 2 {
-			return ConstructErrorResponse(c, componentName, fiber.StatusUnauthorized, errors.New("Missing JWT token in the header"), "MX401", "", "JWTMiddleware")
+			return m.ConstructErrorResponse(c, fiber.StatusUnauthorized, errors.New("Missing JWT token in the header"), "MX401", "JWTMiddleware")
 		}
 
-		claims, err := jwt.JWTDecode(tokenString[1])
+		claims, err := jwtDecode(tokenString[1])
 		if err != nil {
-			return ConstructErrorResponse(c, componentName, fiber.StatusUnauthorized, errors.New("Invalid JWT token"), "MX401", "", "JWTMiddleware")
+			return m.ConstructErrorResponse(c, fiber.StatusUnauthorized, errors.New("Invalid JWT token"), "MX401", "JWTMiddleware")
 		}
 
 		c.Locals("claims", claims)
@@ -69,7 +77,7 @@ func JWTMiddleware(componentName string, mandatory bool) fiber.Handler {
 	}
 }
 
-func ParseCredential(c *fiber.Ctx) *jwt.Claims {
+func (m Middleware) ParseCredential(c *fiber.Ctx) *jwt.Claims {
 	var claim *jwt.Claims
 
 	rawClaims := c.Locals("claims")
@@ -77,19 +85,12 @@ func ParseCredential(c *fiber.Ctx) *jwt.Claims {
 		return claim
 	}
 
-	claim, ok := rawClaims.(*jwt.Claims)
-	if !ok {
-		return claim
-	}
-
+	claim, _ = rawClaims.(*jwt.Claims)
 	return claim
 }
 
-func StringifyBody[T any](s T) string {
-	data, err := json.Marshal(s)
-	if err != nil {
-		return "{}"
+func New(componentName string) Middleware {
+	return Middleware{
+		componentName: componentName,
 	}
-
-	return string(data)
 }
