@@ -3,7 +3,7 @@ package middleware
 import (
 	"errors"
 	"github.com/gofiber/fiber/v2"
-	"github.com/lefalya/commonservice/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"log/slog"
 	"math/rand"
 	"os"
@@ -77,7 +77,7 @@ func (m Middleware) ValidateJWT(mandatory bool, jwtDecode func(string) (*jwt.Cla
 	}
 }
 
-func (m Middleware) ParseCredential(c *fiber.Ctx) *jwt.Claims {
+func (m Middleware) ParseJWT(c *fiber.Ctx) *jwt.Claims {
 	var claim *jwt.Claims
 
 	rawClaims := c.Locals("claims")
