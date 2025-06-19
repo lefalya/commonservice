@@ -2,13 +2,42 @@ package connection
 
 import (
 	"context"
+	"database/sql"
+	"log"
+	"time"
+
+	"github.com/go-sql-driver/mysql"
 	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"log"
-	"time"
 )
+
+func ConnectMySQL(dbAddr string, dbUser string, dbPwd string, dbName string) *sql.DB {
+
+	cfg := mysql.Config{
+		User:                 dbUser,
+		Passwd:               dbPwd,
+		Net:                  "tcp",
+		Addr:                 dbAddr,
+		DBName:               dbName,
+		AllowNativePasswords: true,
+	}
+
+	db, err := sql.Open("mysql", cfg.FormatDSN())
+	if err != nil {
+		log.Fatalf("Error opening database: %v", err)
+	}
+
+	// Test the connection
+	err = db.Ping()
+	if err != nil {
+		log.Fatalf("Error connecting to the database: %v", err)
+	}
+
+	return db
+}
+
 
 func ConnectRedis(redisHostAddr string, password string, isClustered bool) redis.UniversalClient {
 	if redisHostAddr == "" {
